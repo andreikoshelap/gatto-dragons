@@ -6,3 +6,4 @@ spring:
 logging:
     level:
         com.gatto.dragon: DEBUG
+

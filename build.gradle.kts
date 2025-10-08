@@ -1,3 +1,4 @@
+import org.gradle.internal.impldep.org.bouncycastle.asn1.crmf.SinglePubInfo.web
 import org.gradle.kotlin.dsl.implementation
 
 plugins {
@@ -33,7 +34,6 @@ dependencies {
 	annotationProcessor("org.projectlombok:lombok:1.18.32")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
-
 
 tasks.withType<Test> {
 	useJUnitPlatform()
