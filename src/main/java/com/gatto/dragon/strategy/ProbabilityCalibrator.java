@@ -12,22 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ProbabilityCalibrator {
 
     // Prior probabilities per label (lowercase)
-    private static final Map<String, Double> PRIOR;
-    static {
-        var m = new java.util.LinkedHashMap<String, Double>();
-        m.put("sure thing", 0.95);
-        m.put("piece of cake", 0.90);
-        m.put("walk in the park", 0.80);
-        m.put("quite likely", 0.70);
-        m.put("hmmm....", 0.60);
-        m.put("gamble", 0.50);
-        m.put("risky", 0.40);
-        m.put("rather detrimental", 0.20);
-        m.put("playing with fire", 0.15);
-        m.put("suicide mission", 0.10);
-        m.put("impossible", 0.05);
-        PRIOR = java.util.Collections.unmodifiableMap(m);
-    }
+    private static final Map<String, Double> PRIOR = Map.of(
+            "sure thing", 0.95, "piece of cake", 0.90, "walk in the park", 0.80,
+            "quite likely", 0.70, "hmmm....", 0.60, "gamble", 0.50,"risky", 0.40,
+            "rather detrimental", 0.20, "playing with fire", 0.15,
+            "suicide mission", 0.10
+
+    );
 
     // stats[label] = [successes, attempts]
     private final ConcurrentHashMap<String, double[]> stats = new ConcurrentHashMap<>();

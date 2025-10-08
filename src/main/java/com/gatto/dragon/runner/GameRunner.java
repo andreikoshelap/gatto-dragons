@@ -2,11 +2,9 @@ package com.gatto.dragon.runner;
 
 import com.gatto.dragon.api.GameClient;
 import com.gatto.dragon.dto.Game;
-import com.gatto.dragon.dto.ScoringContext;
 import com.gatto.dragon.logic.HealingPolicy;
 import com.gatto.dragon.logic.StateMapper;
 import com.gatto.dragon.strategy.ProbabilityCalibrator;
-import com.gatto.dragon.strategy.ReputationService;
 import com.gatto.dragon.strategy.ScoringPolicy;
 import com.gatto.dragon.util.MessageIdNormalizer;
 import lombok.extern.slf4j.Slf4j;
@@ -26,17 +24,15 @@ public class GameRunner {
     private final ProbabilityCalibrator calibrator;
     private final MessageIdNormalizer messageIdNormalizer;
     private final StateMapper stateMapper;
-    private final ReputationService reputationService;
 
     @Autowired
     public GameRunner(
             GameClient api,
-            @Qualifier("repAwareScoringPolicy") ScoringPolicy scoringPolicy,
+            @Qualifier("expectedValueScoringPolicy") ScoringPolicy scoringPolicy,
             HealingPolicy healingPolicy,
             ProbabilityCalibrator calibrator,
             MessageIdNormalizer messageIdNormalizer,
-            StateMapper stateMapper,
-            ReputationService reputationService
+            StateMapper stateMapper
     ) {
         this.api = api;
         this.scoringPolicy = scoringPolicy;
@@ -44,7 +40,6 @@ public class GameRunner {
         this.calibrator = calibrator;
         this.messageIdNormalizer = messageIdNormalizer;
         this.stateMapper = stateMapper;
-        this.reputationService = reputationService;
     }
 
     public Game playOne() {
@@ -55,15 +50,15 @@ public class GameRunner {
             var msgs = api.messages(game.gameId());
             if (msgs == null || msgs.isEmpty()) break;
 
-            final var rep = reputationService.get(game.gameId(), game.turn());
-            final var ctx = new ScoringContext(game.lives(), rep);
+//            var rep = reputationService.get(game.gameId(), game.turn());
+            final int lives = game.lives();
             var best = msgs.stream()
-                    .max(Comparator.comparingDouble(m -> scoringPolicy.score(m, ctx)))
+                    .max(Comparator.comparingDouble(m -> scoringPolicy.score(m, lives)))
                     .orElseThrow();
 
             String adId = messageIdNormalizer.normalizeAdId(best.adId(), best.encrypted());
             log.debug("messId='{}' lives='{}' gold='{}' level='{}' score='{}' highScore='{}' turn='{}'",
-                    adId, ctx.lives(), game.gold(), game.level(), game.score(), game.highScore(), game.turn());
+                    adId, lives, game.gold(), game.level(), game.score(), game.highScore(), game.turn());
 
             var res = api.solve(game.gameId(), adId);
             if (res == null) break; // 400/404/410 -> invalid ad/game over
