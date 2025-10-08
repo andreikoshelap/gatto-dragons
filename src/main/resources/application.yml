@@ -1,0 +1,8 @@
+mugloar:
+    base-url: https://dragonsofmugloar.com
+spring:
+    application:
+        name: dragon
+logging:
+    level:
+        com.gatto.dragon: DEBUG
