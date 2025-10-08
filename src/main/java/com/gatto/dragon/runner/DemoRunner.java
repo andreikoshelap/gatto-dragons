@@ -25,5 +25,6 @@ public class DemoRunner implements CommandLineRunner {
         int avg = (int)Math.round(scores.stream().mapToInt(Integer::intValue).average().orElse(0));
         int max = scores.stream().mapToInt(i->i).max().orElse(0);
         System.out.printf("Games=%d | avg=%d | max=%d | scores=%s%n", N, avg, max, scores);
+        System.exit(0);
     }
 }

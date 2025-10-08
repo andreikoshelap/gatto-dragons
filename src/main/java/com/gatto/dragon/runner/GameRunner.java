@@ -37,39 +37,55 @@ public class GameRunner {
     }
 
     public GameStart playOne() {
-        GameStart state = api.start();
-
-        while (state.lives() > 0) {
-            var msgs = api.messages(state.gameId());
+        GameStart game = api.start();
+        log.debug(" gameId='{}'", game.gameId());
+        while (game.lives() > 0) {
+            var msgs = api.messages(game.gameId());
             if (msgs == null || msgs.isEmpty()) break;
 
-            GameStart finalState = state;
+            GameStart finalState = game;
             var best = msgs.stream()
                     .max(Comparator.comparingDouble(m -> score(m, finalState.lives())))
-                    .orElse(null);
-            if (best == null) break;
+                    .orElseThrow();
 
-            var res = api.solve(state.gameId(), normalizeAdId(best));
-            if (res == null) break; // 410/404 -> партия завершена
+            String adId = normalizeAdId(best);
+            log.debug(" messId='{}' enc={}", adId, best.encrypted());
 
-            if (!res.success() || res.lives() <= 1) {
-                state = maybeHeal(state, res);
+            var res = api.solve(game.gameId(), adId);
+
+            if (res == null) break; // 410/404 -> game over
+            if (res.lives() <= 0) {
+                game = applySolve(game, res);
+                break;
+            }
+            if (!res.success() || res.lives() == 1) {
+                game = getBetter(game, res);
             } else {
-                state = applySolve(state, res);
+                game = applySolve(game, res);
             }
         }
-        return state;
+        return game;
     }
 
-    private GameStart maybeHeal(GameStart prev, SolveResult res) {
+    private GameStart getBetter(GameStart prev, SolveResult res) {
         GameStart afterSolve = applySolve(prev, res);
-        if (afterSolve.lives() > 1) return afterSolve;
 
-        log.debug("state game id='{}'", prev.gameId());
+        //Game over = stop
+        if (afterSolve.lives() <= 0) {
+            return afterSolve;
+        }
+
+        // no need to heal
+        if (afterSolve.lives() > 1) {
+            return afterSolve;
+        }
+
+        // try to sell potion
         var items = api.shop(prev.gameId());
         if (items == null || items.isEmpty()) {
-            return applySolve(prev, res);
+            return afterSolve;
         }
+
         var potion = items.stream()
                 .filter(i -> i.name() != null && i.name().toLowerCase().contains("pot"))
                 .min(Comparator.comparingInt(ShopItem::cost))
@@ -86,6 +102,7 @@ public class GameRunner {
 
         return applyPurchase(afterSolve, pr);
     }
+
 
 
     private static GameStart applySolve(GameStart prev, SolveResult r) {
