@@ -50,17 +50,23 @@ public class GameClient {
         }
     }
 
-    public SolveResult solve(String gameId, String adId) {
-        try {
-            var uri = UriComponentsBuilder.fromPath("/api/v2/{id}/solve/{ad}")
-                    .buildAndExpand(gameId, adId == null ? "" : adId.trim())
-                    .encode()
-                    .toUri();
+    public SolveResult solve(String gameId, String adIdRaw) {
 
+        String adId = adIdRaw == null ? "" : adIdRaw.trim();
+        var uri = UriComponentsBuilder.fromPath("/api/v2/{id}/solve/{ad}")
+                .buildAndExpand(gameId, adId)
+                .encode()
+                .toUri();
+        try {
             return http.post().uri(uri).retrieve().body(SolveResult.class);
         } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.GONE) {
-                log.info("Game Over (410) on /solve for gameId={}: {}", gameId, e.getResponseBodyAsString());
+            if (e.getStatusCode().value() == 400) {
+                log.warn("400 Bad Request on solve: gameId='{}', rawAd='{}', uri='{}', body={}",
+                        gameId, adIdRaw, uri, e.getResponseBodyAsString());
+                return null; // message rejected - take next
+            }
+            if (e.getStatusCode().is4xxClientError()) {
+                log.info("Client error {} on solve: {}", e.getStatusCode(), e.getResponseBodyAsString());
                 return null;
             }
             throw e;

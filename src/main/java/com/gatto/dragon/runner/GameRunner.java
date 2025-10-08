@@ -6,31 +6,48 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Comparator;
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class GameRunner {
+    public static final String ALLOWED_SYMBOLS = "^[A-Za-z0-9+/_-]+={0,2}$";
+    private static final Pattern VALID_AD = Pattern.compile("^[A-Za-z0-9]{8}$");
     private final GameClient api;
 
-    private static double probabilityMap(String prob) {
-        if (prob == null) return 0.5;
-        return switch (prob.toLowerCase()) {
-            case "sure thing" -> 0.95;
-            case "piece of cake" -> 0.90;
-            case "walk in the park" -> 0.80;
-            case "quite likely" -> 0.70;
-            case "hmm...." -> 0.60;
-            case "risky" -> 0.40;
-            case "gamble" -> 0.20;
-            default -> 0.50;
-        };
+
+    static final Map<String, Double> PROBABILITY_MAP = Map.of(
+            "sure thing", 0.95, "piece of cake", 0.90, "walk in the park", 0.80,
+            "quite likely", 0.70, "hmm....", 0.60, "risky", 0.40, "gamble", 0.20
+    );
+
+    static final ConcurrentHashMap<String, double[]> STATS = new ConcurrentHashMap<>();
+    // STATS[label] = [successes, attempts]
+
+    static double calibratedProb(String label) {
+        String key = label == null ? "" : label.toLowerCase();
+        double oldValue = PROBABILITY_MAP.getOrDefault(key, 0.5);
+        double[] s = STATS.get(key);
+        if (s == null) return oldValue;
+        double result = s[0], attempt = s[1];
+        double alpha = 10.0; // smoothing;
+        return (result + alpha * oldValue) / (attempt + alpha);
+    }
+
+    static void recordOutcome(String label, boolean success) {
+        String k = label == null ? "" : label.toLowerCase();
+        STATS.compute(k, (kk, v) -> {
+            if (v == null) v = new double[2];
+            if (success) v[0]++; v[1]++; return v;
+        });
     }
 
     private static double score(Message m, int lives) {
-        double prob = probabilityMap(m.probability());
+        double prob = calibratedProb(m.probability());
         double urgency = 1.0 + Math.max(0, 5 - m.expiresIn()) * 0.1;
         double lifePenalty = lives <= 1 ? 0.8 : 1.0;
         return prob * m.reward() * urgency * lifePenalty;
@@ -54,6 +71,7 @@ public class GameRunner {
             var res = api.solve(game.gameId(), adId);
 
             if (res == null) break; // 410/404 -> game over
+            recordOutcome(best.probability(), res.success());
             if (res.lives() <= 0) {
                 game = applySolve(game, res);
                 break;
@@ -103,8 +121,6 @@ public class GameRunner {
         return applyPurchase(afterSolve, pr);
     }
 
-
-
     private static GameStart applySolve(GameStart prev, SolveResult r) {
 
         if (prev == null) {
@@ -138,30 +154,34 @@ public class GameRunner {
         );
     }
 
-    // ---- Helpers: normalize adId when message is marked as encrypted ----
     private static String normalizeAdId(Message m) {
-        // Trim raw adId; keep empty string if null
-        String ad = m.adId() == null ? "" : m.adId().trim();
+        // Always trim
+        String raw = m.adId() == null ? "" : m.adId().trim();
 
-        // If the message is flagged as encrypted and adId looks like base64,
-        // try to decode and use the decoded token (typical id is 8 alphanum chars)
-        if (m.encrypted() && looksLikeBase64(ad)) {
-            try {
-                byte[] raw = java.util.Base64.getDecoder().decode(ad);
-                String decoded = new String(raw, java.nio.charset.StandardCharsets.UTF_8).trim();
-                if (decoded.matches("^[A-Za-z0-9]{8}$")) {
-                    return decoded;
-                }
-            } catch (IllegalArgumentException ignore) {
-                // Not actually base64 — fall back to the original adId
+        // If not encrypted — just return raw (URI-encoding on client)
+        if (!m.encrypted()) return raw;
+
+        // Heuristic: looks like base64?
+        if (!looksLikeBase64(raw)) return raw;
+
+        try {
+            boolean urlSafe = raw.indexOf('-') >= 0 || raw.indexOf('_') >= 0;
+            byte[] bytes = (urlSafe ? Base64.getUrlDecoder() : Base64.getDecoder()).decode(raw);
+            String decoded = new String(bytes, StandardCharsets.UTF_8).trim();
+
+            // Use decoded only if it's a typical 8-char alnum token
+            if (VALID_AD.matcher(decoded).matches()) {
+                return decoded;
             }
+        } catch (IllegalArgumentException ignore) {
+            // Not actually base64 — fall back to raw
         }
-        return ad;
+        return raw;
     }
 
     private static boolean looksLikeBase64(String s) {
-        // Quick heuristic: length is a multiple of 4, allowed base64 chars, up to two '=' paddings
-        return s.length() % 4 == 0 && s.matches("^[A-Za-z0-9+/_-]+={0,2}$");
+        // multiple of 4, allowed chars, up to two '=' paddings
+        return s.length() % 4 == 0 && s.matches(ALLOWED_SYMBOLS);
     }
 
 }
