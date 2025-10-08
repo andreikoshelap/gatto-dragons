@@ -1,6 +1,6 @@
 package com.gatto.dragon.dto;
 
-public record GameStart(
+public record Game(
         String gameId,
         int lives,
         int gold,

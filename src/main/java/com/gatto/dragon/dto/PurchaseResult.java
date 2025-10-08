@@ -1,9 +1,9 @@
 package com.gatto.dragon.dto;
 
 public record PurchaseResult(
-        boolean shoppingSuccess,
-        int gold,
-        int lives,
-        Integer  level,
-        int turn) {
+        Boolean shoppingSuccess,
+        Integer gold,
+        Integer lives,
+        Integer level,
+        Integer turn) {
 }
