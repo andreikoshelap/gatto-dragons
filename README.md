@@ -29,7 +29,7 @@ The *urgency* term is motivated by **time preference** and **discounting**: soon
 **In code (idea):**
 ```
 pAdj = p^ρ              // ρ > 1 penalizes uncertainty (stronger when lives low)
-rewardAdj = reward^β    // β ∈ (0,1] imposes diminishing returns
+rewardAdj = reward^betta    // betta ∈ (0,1] imposes diminishing returns
 urgency = 1 + min(0.5, 0.15 × max(0, 5 - expiresIn))
 lowProbPenalty = piecewise penalty when p < 0.4 (stronger at 1 life)
 score_RA = pAdj × rewardAdj × urgency × lowProbPenalty

@@ -1,8 +1,9 @@
 package com.gatto.dragon.strategy.impl;
 
 import com.gatto.dragon.dto.Message;
-import com.gatto.dragon.strategy.ScoringPolicy;
+import com.gatto.dragon.dto.ScoringContext;
 import com.gatto.dragon.strategy.ProbabilityCalibrator;
+import com.gatto.dragon.strategy.ScoringPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -21,13 +22,13 @@ public class RiskAverseScoringPolicy implements ScoringPolicy {
     private final ProbabilityCalibrator calibrator;
 
     @Override
-    public double score(Message message, int lives) {
+    public double score(Message message, ScoringContext ctx) {
         // 1) calibrated probability from outcomes
         double p = calibrator.calibratedProb(message.probability());
 
         // 2) risk aversion exponent: stronger when lives are low
         //    rho > 1 shrinks probabilities < 1 (penalizes risk)
-        double rho = (lives <= 1) ? 1.8 : (lives == 2 ? 1.5 : 1.2);
+        double rho = (ctx.lives() <= 1) ? 1.8 : (ctx.lives() == 2 ? 1.5 : 1.2);
         double pAdj = Math.pow(p, rho);
 
         // 3) diminishing returns on reward to avoid being lured by huge but risky payouts
@@ -44,7 +45,7 @@ public class RiskAverseScoringPolicy implements ScoringPolicy {
         double lowProbPenalty = 1.0;
         if (p < 0.4) {
             double deficit = 0.4 - p; // [0..0.4]
-            double k = (lives <= 1) ? 1.2 : (lives == 2 ? 0.8 : 0.5);
+            double k = (ctx.lives() <= 1) ? 1.2 : (ctx.lives() == 2 ? 0.8 : 0.5);
             lowProbPenalty = Math.max(0.5, 1.0 - k * deficit);
         }
 
