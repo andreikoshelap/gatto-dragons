@@ -1,6 +1,7 @@
 package com.gatto.dragon.strategy.impl;
 
 import com.gatto.dragon.dto.Message;
+import com.gatto.dragon.dto.ScoringContext;
 import com.gatto.dragon.strategy.ProbabilityCalibrator;
 
 /** Shared helpers for scoring policy tests. */
@@ -20,5 +21,9 @@ abstract class AbstractScoringTestBase {
      */
     protected Message msg(String probabilityLabel, int reward, int expiresIn) {
         return new Message("AD123456", "text", reward, expiresIn, false, probabilityLabel);
+    }
+
+    protected ScoringContext sc(int lives, int gold, int turn) {
+        return new ScoringContext(lives,  gold,  turn, null, null);
     }
 }

@@ -29,7 +29,7 @@ class RiskAverseScoringPolicyTest extends AbstractScoringTestBase {
         double lowProbPenalty = 1.0;
         double expected = pAdj * rewardAdj * urgency * lowProbPenalty;
 
-        double actual = policy.score(m, 2);
+        double actual = policy.score(m, sc(2, 300, 10));
         assertEquals(expected, actual, 1e-9);
     }
 
@@ -46,7 +46,7 @@ class RiskAverseScoringPolicyTest extends AbstractScoringTestBase {
         double urgency = 1.5; // capped
         double expected = pAdj * rewardAdj * urgency;
 
-        double actual = policy.score(m, 3);
+        double actual = policy.score(m, sc(3, 300, 10));
         assertEquals(expected, actual, 1e-9);
     }
 
@@ -63,7 +63,7 @@ class RiskAverseScoringPolicyTest extends AbstractScoringTestBase {
         double lowProbPenalty = 0.88;
         double expected = pAdj * rewardAdj * 1.0 * lowProbPenalty;
 
-        double actual = policy.score(m, 1);
+        double actual = policy.score(m, sc(1, 300, 10));
         assertEquals(expected, actual, 1e-9);
     }
 
@@ -78,7 +78,7 @@ class RiskAverseScoringPolicyTest extends AbstractScoringTestBase {
         double lowProbPenalty = 0.92;
         double expected = pAdj * rewardAdj * 1.0 * lowProbPenalty;
 
-        double actual = policy.score(m, 2);
+        double actual = policy.score(m, sc(2, 300, 10));
         assertEquals(expected, actual, 1e-9);
     }
 
@@ -88,7 +88,7 @@ class RiskAverseScoringPolicyTest extends AbstractScoringTestBase {
         var policy = policyWithProb(0.75);
         var m = msg("quite likely", -10, 3);
 
-        double actual = policy.score(m, 3);
+        double actual = policy.score(m, sc(3, 300, 10));
         assertEquals(0.0, actual, 1e-12);
     }
 
@@ -106,7 +106,7 @@ class RiskAverseScoringPolicyTest extends AbstractScoringTestBase {
         double urgency = 1.45;
         double expected = pAdj * rewardAdj * urgency;
 
-        double actual = policy.score(m, 1);
+        double actual = policy.score(m, sc(1, 300, 10));
         assertEquals(expected, actual, 1e-9);
     }
 }

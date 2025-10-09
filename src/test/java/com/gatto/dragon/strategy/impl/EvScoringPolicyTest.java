@@ -21,7 +21,7 @@ class EvScoringPolicyTest extends AbstractScoringTestBase {
         var policy = policyWithProb(0.90);
         var m = msg("sure thing", 100, 5);
 
-        double actual = policy.score(m, /*lives*/ 2);
+        double actual = policy.score(m, sc(2, 300, 10));
 
         assertEquals(90.0, actual, 1e-9);
     }
@@ -32,7 +32,7 @@ class EvScoringPolicyTest extends AbstractScoringTestBase {
         var policy = policyWithProb(0.50);
         var m = msg("hmm....", 100, 0);
 
-        double actual = policy.score(m, 3);
+        double actual = policy.score(m, sc(3, 300, 10));
 
         assertEquals(75.0, actual, 1e-9); // 0.5 * 100 * 1.5 * 1.0
     }
@@ -43,7 +43,7 @@ class EvScoringPolicyTest extends AbstractScoringTestBase {
         var policy = policyWithProb(0.80);
         var m = msg("quite likely", 100, 5);
 
-        double actual = policy.score(m, 1);
+        double actual = policy.score(m, sc(1, 300, 10));
 
         assertEquals(64.0, actual, 1e-9); // 0.8 * 100 * 1.0 * 0.8
     }
@@ -54,7 +54,7 @@ class EvScoringPolicyTest extends AbstractScoringTestBase {
         var policy = policyWithProb(0.70);
         var m = msg("quite likely", 60, 2);
 
-        double actual = policy.score(m, 1);
+        double actual = policy.score(m, sc(1, 300, 10));
 
         // 0.70 * 60 * 1.3 * 0.8 = 43.68
         assertEquals(43.68, actual, 1e-9);
@@ -66,7 +66,7 @@ class EvScoringPolicyTest extends AbstractScoringTestBase {
         var policy = policyWithProb(0.50);
         var m = msg(null, 40, 10); // expiresIn >= 5 -> urgency = 1.0
 
-        double actual = policy.score(m, 2);
+        double actual = policy.score(m, sc(2, 100, 1));
 
         assertEquals(20.0, actual, 1e-9);
     }

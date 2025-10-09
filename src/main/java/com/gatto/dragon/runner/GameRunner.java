@@ -10,6 +10,7 @@ import com.gatto.dragon.strategy.ProbabilityCalibrator;
 import com.gatto.dragon.strategy.ReputationService;
 import com.gatto.dragon.strategy.ScoringPolicy;
 import com.gatto.dragon.util.MessageIdNormalizer;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -27,12 +28,11 @@ public class GameRunner {
     private final ProbabilityCalibrator calibrator;
     private final MessageIdNormalizer messageIdNormalizer;
     private final StateMapper stateMapper;
-    private final ReputationService reputationService;
 
     @Autowired
     public GameRunner(
             GameClient api,
-            @Qualifier("bankrollAwareScoringPolicy") ScoringPolicy scoringPolicy,
+            @Qualifier("scoringPolicy") ScoringPolicy scoringPolicy, // <-- router
             HealingPolicy healingPolicy,
             ProbabilityCalibrator calibrator,
             MessageIdNormalizer messageIdNormalizer,
@@ -45,7 +45,10 @@ public class GameRunner {
         this.calibrator = calibrator;
         this.messageIdNormalizer = messageIdNormalizer;
         this.stateMapper = stateMapper;
-        this.reputationService = reputationService;
+    }
+    @PostConstruct
+    void logPolicy() {
+        log.info("Using scoring policy bean: {}", scoringPolicy.getClass().getSimpleName());
     }
 
     public Game playOne() {

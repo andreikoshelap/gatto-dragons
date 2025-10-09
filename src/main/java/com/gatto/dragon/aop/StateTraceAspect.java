@@ -47,7 +47,7 @@ public class StateTraceAspect {
     @AfterReturning(pointcut = "startCallPc()", returning = "ret")
     public void afterStart(Object ret) {
         Game g = (Game) ret;
-        log.debug("HTTP start gid='{}'", g.gameId());
+        log.debug("HTTP start game id='{}'", g.gameId());
     }
 
     // --- AROUND: applySolve ---
