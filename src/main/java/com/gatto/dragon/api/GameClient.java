@@ -18,11 +18,11 @@ import java.util.List;
 public class GameClient {
     private final RestClient http;
 
-    public GameStart start() {
+    public Game start() {
         return http.post()
                 .uri("/api/v2/game/start")
                 .retrieve()
-                .body(GameStart.class);
+                .body(Game.class);
     }
 
     public List<ShopItem> shop(String gameId) {
@@ -102,6 +102,34 @@ public class GameClient {
                 log.info("Game Over (410) on /shop/buy for gameId={}: {}", gameId, e.getResponseBodyAsString());
                 return null;
             }
+            throw e;
+        }
+    }
+
+    public Reputation investigateReputation(String gameId) {
+        var uri = UriComponentsBuilder.fromPath("/api/v2/{id}/investigate/reputation")
+                .buildAndExpand(gameId)
+                .encode()
+                .toUri();
+        try {
+            return http.post()
+                    .uri(uri)
+                    .retrieve()
+                    .body(Reputation.class);
+        } catch (HttpClientErrorException e) {
+            // game over / not found
+            if (e.getStatusCode() == HttpStatus.GONE || e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                log.info("Reputation unavailable for {}: {}", gameId, e.getResponseBodyAsString());
+                return null;
+            }
+            if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+                log.warn("Bad request on investigate reputation for {}: {}", gameId, e.getResponseBodyAsString());
+                return null;
+            }
+            throw e;
+        } catch (RestClientResponseException e) {
+            log.warn("HTTP {} on investigate reputation for {} body={}",
+                    e.getStatusCode(), gameId, e.getResponseBodyAsString());
             throw e;
         }
     }

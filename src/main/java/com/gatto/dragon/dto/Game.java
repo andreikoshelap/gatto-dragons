@@ -1,6 +1,9 @@
 package com.gatto.dragon.dto;
 
-public record GameStart(
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Game(
         String gameId,
         int lives,
         int gold,
