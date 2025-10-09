@@ -24,6 +24,5 @@ public class DemoRunner implements CommandLineRunner {
             scores.add(end.score());
         }
         System.out.printf("Games=%d | scores=%s%n", N, scores);
-        System.exit(0);
     }
 }

@@ -73,6 +73,7 @@ public class GameRunner {
                 game = stateMapper.applySolve(game, res);
             }
         }
+        calibrator.dump(game.gameId());
         return game;
     }
 }

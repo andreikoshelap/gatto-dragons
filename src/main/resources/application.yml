@@ -8,4 +8,5 @@ logging:
         com.gatto.dragon.aop: DEBUG
         com.gatto.dragon.api: DEBUG
         com.gatto.dragon.logic: DEBUG
+        com.gatto.dragon.strategy: DEBUG
 
