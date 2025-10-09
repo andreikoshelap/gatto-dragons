@@ -57,8 +57,6 @@ public class GameRunner {
                     .orElseThrow();
 
             String adId = messageIdNormalizer.normalizeAdId(best.adId(), best.encrypted());
-            log.debug("messId='{}' lives='{}' gold='{}' level='{}' score='{}' highScore='{}' turn='{}'",
-                    adId, lives, game.gold(), game.level(), game.score(), game.highScore(), game.turn());
 
             var res = api.solve(game.gameId(), adId);
             if (res == null) break; // 400/404/410 -> invalid ad/game over

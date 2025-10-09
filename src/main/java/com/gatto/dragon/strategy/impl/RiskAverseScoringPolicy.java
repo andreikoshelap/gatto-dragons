@@ -21,9 +21,9 @@ public class RiskAverseScoringPolicy implements ScoringPolicy {
     private final ProbabilityCalibrator calibrator;
 
     @Override
-    public double score(Message m, int lives) {
+    public double score(Message message, int lives) {
         // 1) calibrated probability from outcomes
-        double p = calibrator.calibratedProb(m.probability());
+        double p = calibrator.calibratedProb(message.probability());
 
         // 2) risk aversion exponent: stronger when lives are low
         //    rho > 1 shrinks probabilities < 1 (penalizes risk)
@@ -33,10 +33,10 @@ public class RiskAverseScoringPolicy implements ScoringPolicy {
         // 3) diminishing returns on reward to avoid being lured by huge but risky payouts
         //    beta in (0,1]; smaller => stronger diminishing
         double beta = 0.85;
-        double rewardAdj = Math.pow(Math.max(0, m.reward()), beta);
+        double rewardAdj = Math.pow(Math.max(0, message.reward()), beta);
 
         // 4) urgency boost for soon-to-expire ads, capped to avoid overpowering risk aversion
-        int miss = Math.max(0, 5 - m.expiresIn());
+        int miss = Math.max(0, 5 - message.expiresIn());
         double urgency = 1.0 + Math.min(0.5, 0.15 * miss); // cap at +50%
 
         // 5) extra penalty for very low probabilities, stronger when lives are low

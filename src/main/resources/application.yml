@@ -5,5 +5,7 @@ spring:
         name: dragon
 logging:
     level:
-        com.gatto.dragon: DEBUG
+        com.gatto.dragon.aop: DEBUG
+        com.gatto.dragon.api: DEBUG
+        com.gatto.dragon.logic: DEBUG
 

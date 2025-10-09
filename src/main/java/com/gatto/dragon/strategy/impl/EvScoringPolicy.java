@@ -16,11 +16,15 @@ public class EvScoringPolicy implements ScoringPolicy {
     private final ProbabilityCalibrator calibrator;
 
     @Override
-    public double score(Message m, int lives) {
-        double prob = calibrator.calibratedProb(m.probability());
-        double urgency = 1.0 + Math.max(0, 5 - m.expiresIn()) * 0.1;
+    public double score(Message message, int lives) {
+        // 1) calibrated probability from outcomes
+        double prob = calibrator.calibratedProb(message.probability());
+        // 2) risk aversion exponent: stronger when lives are low
         double lifePenalty = lives <= 1 ? 0.8 : 1.0;
-        return prob * m.reward() * urgency * lifePenalty;
+        // 3) urgency boost for soon-to-expire ads, capped to avoid overpowering risk aversion
+        double urgency = 1.0 + Math.max(0, 5 - message.expiresIn()) * 0.1;
+
+        return prob * message.reward() * urgency * lifePenalty;
     }
 }
 
