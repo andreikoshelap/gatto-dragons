@@ -37,7 +37,7 @@ public class BankrollAwareScoringPolicy implements ScoringPolicy {
         boolean canHeal = ctx.gold() >= potionCost;
 
         if (!canHeal) {
-            return base * p; // fail = конец, ценим только успех
+            return base * p; // fail = survival
         } else {
             double survival = p + (1 - p) * params.qSurviveOnFail;
             double expectedGoldSpend = (1 - p) * potionCost;

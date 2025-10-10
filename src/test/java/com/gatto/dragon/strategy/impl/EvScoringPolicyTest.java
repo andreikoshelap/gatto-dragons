@@ -19,7 +19,7 @@ class EvScoringPolicyTest extends AbstractScoringTestBase {
     void score_usesCalibratedProbability_andNoUrgency_NoLifePenalty() {
         // prob=0.90, reward=100, expiresIn=5 -> urgency=1.0, lives=2 -> lifePenalty=1.0
         var policy = policyWithProb(0.90);
-        var m = msg("sure thing", 100, 5);
+        var m = msg("piece of cake", 100, 5);
 
         double actual = policy.score(m, sc(2, 300, 10));
 
@@ -30,7 +30,7 @@ class EvScoringPolicyTest extends AbstractScoringTestBase {
     void score_appliesUrgencyBoost_whenExpiresSoon() {
         // prob=0.5, reward=100, expiresIn=0 -> urgency=1 + (5-0)*0.1 = 1.5, lives=3 -> lifePenalty=1.0
         var policy = policyWithProb(0.50);
-        var m = msg("hmm....", 100, 0);
+        var m = msg("gamble", 100, 0);
 
         double actual = policy.score(m, sc(3, 300, 10));
 
