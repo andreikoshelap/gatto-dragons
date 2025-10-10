@@ -28,14 +28,12 @@ public class StateTraceAspect {
     @Pointcut("execution(* com.gatto.dragon.api.GameClient.shop(..)) && args(gameId)")
     public void shopCall(String gameId) {}
 
-    // ===== mappers (синхронные) — можно оставить твои вокруг-советы =====
     @Pointcut("execution(* com.gatto.dragon.logic.StateMapper.applySolve(..))")
     public void applySolvePc() {}
 
     @Pointcut("execution(* com.gatto.dragon.logic.StateMapper.applyPurchase(..))")
     public void applyPurchasePc() {}
 
-    // ===== реактивные HTTP вызовы: оборачиваем Mono/Flux =====
 
     @Around("startCall()")
     public Object aroundStart(ProceedingJoinPoint pjp) throws Throwable {
@@ -43,77 +41,11 @@ public class StateTraceAspect {
         if (out instanceof reactor.core.publisher.Mono<?> mono) {
             return mono.doOnNext(g -> {
                 com.gatto.dragon.dto.Game game = (com.gatto.dragon.dto.Game) g;
-                log.debug("HTTP start gid={}", game.gameId());
-            });
-        }
-        return out; // на случай синхронной реализации
-    }
-
-    @Around(value = "solveCall(gameId, adId)", argNames = "pjp,gameId,adId")
-    public Object aroundSolve(ProceedingJoinPoint pjp, String gameId, String adId) throws Throwable {
-        Object out = pjp.proceed();
-        if (out instanceof reactor.core.publisher.Mono<?> mono) {
-            return mono.doOnNext(r -> {
-                com.gatto.dragon.dto.SolveResult res = (com.gatto.dragon.dto.SolveResult) r;
-                if (res != null) {
-                    log.debug("HTTP solve gid={} adId={} -> success={} lives={} gold={} score={} turn={}",
-                            gameId, adId, Boolean.TRUE.equals(res.success()),
-                            res.lives(), res.gold(), res.score(), res.turn());
-                } else {
-                    log.warn("HTTP solve gid={} adId={} -> null", gameId, adId);
-                }
+                log.debug("HTTP start game id={}", game.gameId());
             });
         }
         return out;
     }
-
-    @Around(value = "purchaseCall(gameId, itemId)", argNames = "pjp,gameId,itemId")
-    public Object aroundPurchase(ProceedingJoinPoint pjp, String gameId, String itemId) throws Throwable {
-        Object out = pjp.proceed();
-        if (out instanceof reactor.core.publisher.Mono<?> mono) {
-            return mono.doOnNext(r -> {
-                com.gatto.dragon.dto.PurchaseResult pr = (com.gatto.dragon.dto.PurchaseResult) r;
-                if (pr != null) {
-                    log.debug("HTTP purchase gid={} itemId={} -> ok={} lives={} gold={} turn={}",
-                            gameId, itemId, Boolean.TRUE.equals(pr.shoppingSuccess()),
-                            nz(pr.lives()), nz(pr.gold()), nz(pr.turn()));
-                } else {
-                    log.warn("HTTP purchase gid={} itemId={} -> null", gameId, itemId);
-                }
-            });
-        }
-        return out;
-    }
-
-    @Around(value = "messagesCall(gameId)", argNames = "pjp,gameId")
-    public Object aroundMessages(ProceedingJoinPoint pjp, String gameId) throws Throwable {
-        Object out = pjp.proceed();
-        if (out instanceof reactor.core.publisher.Mono<?> mono) {
-            @SuppressWarnings("unchecked")
-            reactor.core.publisher.Mono<java.util.List<com.gatto.dragon.dto.Message>> m =
-                    (reactor.core.publisher.Mono<java.util.List<com.gatto.dragon.dto.Message>>) mono;
-
-            return m.doOnNext(list -> log.debug("HTTP messages gid={} -> {} items", gameId,
-                    (list == null ? 0 : list.size())));
-        }
-        return out;
-    }
-
-    @Around(value = "shopCall(gameId)", argNames = "pjp,gameId")
-    public Object aroundShop(ProceedingJoinPoint pjp, String gameId) throws Throwable {
-        Object out = pjp.proceed();
-        if (out instanceof reactor.core.publisher.Mono<?> mono) {
-            @SuppressWarnings("unchecked")
-            reactor.core.publisher.Mono<java.util.List<com.gatto.dragon.dto.ShopItem>> m =
-                    (reactor.core.publisher.Mono<java.util.List<com.gatto.dragon.dto.ShopItem>>) mono;
-
-            return m.doOnNext(list -> log.debug("HTTP shop gid={} -> {} items", gameId,
-                    (list == null ? 0 : list.size())));
-        }
-        return out;
-    }
-
-    // ===== мапперы (синхронные) — как у тебя было, оставлю коротко =====
 
     @Around("applySolvePc()")
     public Object aroundApplySolve(ProceedingJoinPoint pjp) throws Throwable {
@@ -124,7 +56,7 @@ public class StateTraceAspect {
         Object out = pjp.proceed();
         com.gatto.dragon.dto.Game after = (com.gatto.dragon.dto.Game) out;
         log.debug("APPLY_SOLVE gid={} success={} | lives:{}->{}({}), gold:{}->{}({}), score:{}->{}({}), turn:{}",
-                before.gameId(), Boolean.TRUE.equals(res.success()),
+                before.gameId(), res.success(),
                 l0, after.lives(), delta(after.lives()-l0),
                 g0, after.gold(),  delta(after.gold()-g0),
                 s0, after.score(), delta(after.score()-s0),
@@ -149,7 +81,5 @@ public class StateTraceAspect {
         return out;
     }
 
-    // ===== helpers =====
     private static String delta(int d) { return (d >= 0 ? "+" : "") + d; }
-    private static int nz(Integer v) { return v == null ? 0 : v; }
 }

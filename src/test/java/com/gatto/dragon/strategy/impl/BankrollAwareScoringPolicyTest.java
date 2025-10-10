@@ -61,7 +61,7 @@ class BankrollAwareScoringPolicyTest extends AbstractScoringTestBase {
 
         double urgency = 1.0;
         double base = p * reward * urgency * lifePenaltyAtOne; // p*120*1*0.8 = 57.6
-        double expected = base * p; // multiple на survival p => 57.6 * 0.6 = 34.56
+        double expected = base * p; // multiple on survival p => 57.6 * 0.6 = 34.56
 
         double actual = policy.score(m, c);
         assertEquals(expected, actual, 1e-9);

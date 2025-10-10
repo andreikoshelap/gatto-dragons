@@ -38,11 +38,9 @@ public class ReactiveHealingPolicy implements HealingPolicy {
                 .map(this::pickCheapestPotion)
                 .flatMap(potion -> {
                     if (potion == null) {
-                        log.debug("No potion found in shop; return afterSolve");
                         return Mono.just(afterSolve);
                     }
                     if (potion.cost() > afterSolve.gold()) {
-                        log.debug("Not enough gold for potion (cost={}, gold={})", potion.cost(), afterSolve.gold());
                         return Mono.just(afterSolve);
                     }
                     return api.purchase(prev.gameId(), potion.id())

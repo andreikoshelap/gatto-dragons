@@ -17,17 +17,22 @@ public class DemoRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        int N = 2;
-        int concurrency = Math.min(4, N);              // настроить при желании
+        int N = 10;
+        int concurrency = 5;
 
         Flux.range(0, N)
-                .flatMap(i -> runner.playOne(), concurrency) // параллельный запуск до 'concurrency'
+                .flatMap(i ->
+                                runner.playOne()
+                                        .doOnSubscribe(s -> log.info("Start game #{}", i))
+                                        .doOnNext(g -> log.info("End   game #{} id={} score={}", i, g.gameId(), g.score())),
+                        concurrency
+                )
                 .map(Game::score)
                 .collectList()
-                .doOnNext(scores ->
-                        System.out.printf("Games=%d | scores=%s%n", N, scores)
-                )
+                .doOnNext(scores -> {
+                    int max = scores.stream().mapToInt(x -> x).max().orElse(0);
+                    log.info("Games={} | scores={} |  max={}", scores.size(), scores, max);
+                })
                 .block();
     }
-
 }
