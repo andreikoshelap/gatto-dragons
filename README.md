@@ -28,14 +28,37 @@
 com.gatto.dragon.api        // GameClient (HTTP)
 com.gatto.dragon.aop        // Aspects for loging/monitoring
 com.gatto.dragon.dto        // Game, Message, SolveResult, PurchaseResult
-com.gatto.dragon.runner     // GameRunner, demo runner, aspects (optional)
+com.gatto.dragon.runner     // GameRunner
 com.gatto.dragon.logic      // StateMapper, HealingPolicy (+ impls)
 com.gatto.dragon.strategy   // ScoringPolicy, ScoringContext, ProbabilityCalibrator (+ impls)
 com.gatto.dragon.util       // MessageIdNormalizer, helpers
 com.gatto.dragon.config     // Strategy router, urgency config
 ```
 **Strategy router**
-## 1) Baseline: Expected Value (EV)
+## 1) Strategies & How to Switch Them
+
+You can choose one of several **scoring strategies**. Selection is done in `application.yml` (or via env var).
+
+### Available strategies
+- **ev** *(default)*— *Expected Value*. Simple, greedy on EV with a small urgency bump and life penalty at 1 life.
+- **riskAverse** — Penalizes uncertainty and uses diminishing returns on reward. More conservative when lives are low.
+- **bankrollAware**  — EV adjusted by survival and expected healing costs when lives are low. Helps avoid sudden game-over and manages potion cost vs. gold.
+
+### Switching in `application.yml`
+```yaml
+dragon:
+  scoring:
+    policy: bankrollAware   # ev | riskAverse | bankrollAware
+```
+
+At startup the app logs the active strategy:
+```
+Selected scoring policy: <beanId> (cfg=bankrollAware)
+```
+
+> Under the hood we use a small router bean (`ScoringPolicyConfig`) that reads `dragon.scoring.policy` and provides the matching `ScoringPolicy` implementation to the runner.
+
+## 2) Baseline: Expected Value (EV)
 
 **Formula (used in code):**
 ```
@@ -47,15 +70,11 @@ where lifePenalty = (lives ≤ 1 ? 0.8 : 1.0)
 - The **urgency multiplier** `(1 + max(0, 5 - expiresIn) × 0.1)` is an engineering heuristic to favor soon-expiring ads; it’s inspired by time-discounting models that reward sooner outcomes more than later ones (see p.3). The specific constants (5, 0.1) are empirical.
 - The **life penalty** (0.8 on one life) is a simple risk control reflecting higher aversion to failure when the “bankroll” (lives) is low; see Expected Utility motivation in p.2.
 
-## 2) Risk Aversion & Utility
+## 3) Risk Aversion & Utility
 
 Real agents rarely maximize raw EV of money; they maximize **expected utility**, which captures diminishing marginal utility and risk aversion (e.g., preferring a sure small gain over a risky larger EV). The von Neumann–Morgenstern utility theorem formalizes when maximizing *expected utility* is rational. In practice, we implement risk aversion by transforming either the probability or the payoff (e.g., concave reward, probability exponents/penalties).
 
 A related idea is the **Kelly criterion**, which maximizes long-run growth and explicitly accounts for *risk of ruin*; it’s often used to modulate bet size relative to bankroll. We don’t apply Kelly verbatim, but our bankroll-aware scoring borrows its spirit: scale aggressiveness down when capital/lives are low.
-
-## 3) Time & Urgency
-
-The *urgency* term is motivated by **time preference** and **discounting**: sooner rewards get more weight than later ones. Classical models use exponential discounting; behavioral evidence often supports **hyperbolic discounting** (present bias). We approximate this with a simple linear bump capped by design. If you prefer, you can replace our bump with an explicit discount factor `1 / (1 + k·delay)` (hyperbolic) or `exp(-r·delay)` (exponential).
 
 ## 4) Risk-Averse Policy (RA)
 
@@ -101,7 +120,3 @@ This scheme is conceptually related to bankroll-sensitive decision rules (e.g., 
   - Corporate Finance Institute — Expected Value: https://corporatefinanceinstitute.com/resources/data-science/expected-value/
 
 ---
-
-### Appendix: Why these constants aren’t “from a book”
-
-The structural pieces (EV core, risk aversion, discounting) are textbook ideas. The numerical constants (e.g., `5`, `0.1`, `0.8`) are **empirical**: they fit this game’s pacing and rewards. We recommend logging outcomes and refitting these coefficients periodically.
