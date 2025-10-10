@@ -1,12 +1,12 @@
 package com.gatto.dragon.runner;
 
+import com.gatto.dragon.dto.Game;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
+import reactor.core.publisher.Flux;
 
 @Slf4j
 @Component
@@ -18,11 +18,16 @@ public class DemoRunner implements CommandLineRunner {
     @Override
     public void run(String... args) {
         int N = 2;
-        var scores = new ArrayList<Integer>();
-        for (int i = 0; i < N; i++) {
-            var end = runner.playOne();
-            scores.add(end.score());
-        }
-        System.out.printf("Games=%d | scores=%s%n", N, scores);
+        int concurrency = Math.min(4, N);              // настроить при желании
+
+        Flux.range(0, N)
+                .flatMap(i -> runner.playOne(), concurrency) // параллельный запуск до 'concurrency'
+                .map(Game::score)
+                .collectList()
+                .doOnNext(scores ->
+                        System.out.printf("Games=%d | scores=%s%n", N, scores)
+                )
+                .block();
     }
+
 }

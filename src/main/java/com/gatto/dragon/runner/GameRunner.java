@@ -11,84 +11,111 @@ import com.gatto.dragon.strategy.ReputationService;
 import com.gatto.dragon.strategy.ScoringPolicy;
 import com.gatto.dragon.util.MessageIdNormalizer;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.util.Comparator;
+import java.util.List;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class GameRunner {
 
     private final GameClient api;
+    @Qualifier("scoringPolicy")
     private final ScoringPolicy scoringPolicy;
     private final HealingPolicy healingPolicy;
     private final ProbabilityCalibrator calibrator;
     private final MessageIdNormalizer messageIdNormalizer;
     private final StateMapper stateMapper;
+    private final ReputationService reputationService;
 
-    @Autowired
-    public GameRunner(
-            GameClient api,
-            @Qualifier("scoringPolicy") ScoringPolicy scoringPolicy, // <-- router
-            HealingPolicy healingPolicy,
-            ProbabilityCalibrator calibrator,
-            MessageIdNormalizer messageIdNormalizer,
-            StateMapper stateMapper,
-            ReputationService reputationService
-    ) {
-        this.api = api;
-        this.scoringPolicy = scoringPolicy;
-        this.healingPolicy = healingPolicy;
-        this.calibrator = calibrator;
-        this.messageIdNormalizer = messageIdNormalizer;
-        this.stateMapper = stateMapper;
-    }
     @PostConstruct
     void logPolicy() {
         log.info("Using scoring policy bean: {}", scoringPolicy.getClass().getSimpleName());
     }
 
-    public Game playOne() {
-        Game game = api.start();
+    public Mono<Game> playOne() {
+        return api.start()
+                .flatMap(this::loop)
+                .doOnSuccess(g -> calibrator.dump(g.gameId()));
+    }
 
-        while (game.lives() > 0) {
-            var msgs = api.messages(game.gameId());
-            if (msgs == null || msgs.isEmpty()) break;
-
-//            final var rep = reputationService.get(game.gameId(), game.turn());
-            ScoringContext ctx = new ScoringContext(
-                    game.lives(),
-                    game.gold(),
-                    game.turn(),
-                    null,
-                    null      // potionCostHint
-            );
-
-            Message best = msgs.stream()
-                    .max(Comparator.comparingDouble(m -> scoringPolicy.score(m, ctx)))
-                    .orElseThrow();
-
-            String adId = messageIdNormalizer.normalizeAdId(best.adId(), best.encrypted());
-
-            var res = api.solve(game.gameId(), adId);
-            if (res == null) break; // 400/404/410 -> invalid ad/game over
-
-            calibrator.recordOutcome(best.probability(), res.success());
-
-            if (res.lives() <= 0) {
-                game = stateMapper.applySolve(game, res);
-                break;
-            }
-            if (!res.success() || res.lives() == 1) {
-                game = healingPolicy.heal(game, res);
-            } else {
-                game = stateMapper.applySolve(game, res);
-            }
+    private Mono<Game> loop(Game game) {
+        if (game.lives() <= 0) {
+            return Mono.just(game);
         }
-        calibrator.dump(game.gameId());
-        return game;
+
+        return api.messages(game.gameId())
+                .flatMap(msgs -> {
+                    if (msgs == null) {
+                        return Mono.just(game);
+                    }
+
+                    ScoringContext ctx = new ScoringContext(
+                            game.lives(),
+                            game.gold(),
+                            game.turn(),
+                            null,
+                            null
+                    );
+
+                    Message best = pickBest(msgs, ctx);
+                    String adId = messageIdNormalizer.normalizeAdId(best.adId(), best.encrypted());
+
+                    return api.solve(game.gameId(), adId)
+                            .flatMap(res -> {
+                                if (res == null) {
+                                    return Mono.just(game);
+                                }
+
+                                safeRecordOutcome(best.probability(), res.success());
+
+                                if (res.lives() <= 0) {
+                                    Game after = stateMapper.applySolve(game, res);
+                                    return Mono.just(after);
+                                }
+
+                                if (!res.success() || res.lives() == 1) {
+                                    return healingPolicy.heal(game, res)
+                                            .flatMap(next -> {
+                                                if (next.lives() > 0) return loop(next);
+                                                return Mono.just(next);
+                                            });
+                                } else {
+                                    Game next = stateMapper.applySolve(game, res);
+                                    if (next.lives() > 0) {
+                                        return loop(next);
+                                    }
+                                    return Mono.just(next);
+                                }
+                            })
+                            .onErrorResume(ex -> {
+                                log.debug("solve failed: {} — ending game {}", ex.toString(), game.gameId());
+                                return Mono.just(game);
+                            });
+                })
+                .onErrorResume(ex -> {
+                    log.debug("messages failed: {} — ending game {}", ex.toString(), game.gameId());
+                    return Mono.just(game);
+                });
+    }
+
+    private Message pickBest(List<Message> msgs, ScoringContext ctx) {
+        return msgs.stream()
+                .max(Comparator.comparingDouble(m -> scoringPolicy.score(m, ctx)))
+                .orElseThrow();
+    }
+
+    private void safeRecordOutcome(String label, Boolean success) {
+        try {
+            calibrator.recordOutcome(label, Boolean.TRUE.equals(success));
+        } catch (Throwable t) {
+            log.warn("calibrator.recordOutcome failed: {}", t.toString());
+        }
     }
 }

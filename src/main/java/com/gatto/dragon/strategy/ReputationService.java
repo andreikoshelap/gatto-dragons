@@ -17,7 +17,7 @@ public class ReputationService {
     public Reputation get(String gameId, int currentTurn) {
         int refreshEvery = 3;
         if (last == null || lastTurn < 0 || currentTurn - lastTurn >= refreshEvery) {
-            last = api.investigateReputation(gameId);
+//            last = api.investigateReputation(gameId);
             lastTurn = currentTurn;
         }
         return last;
