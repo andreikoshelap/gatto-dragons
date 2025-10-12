@@ -13,3 +13,6 @@ logging:
 dragon:
     scoring:
         policy: ev   # ev |
+    urgency:
+        window: 6
+        slope: 0.1

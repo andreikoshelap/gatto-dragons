@@ -32,7 +32,7 @@ public class GameRunner {
     @Autowired
     public GameRunner(
             GameClient api,
-            @Qualifier("scoringPolicy") ScoringPolicy scoringPolicy, // <-- router
+            @Qualifier("scoringPolicy") ScoringPolicy scoringPolicy,
             HealingPolicy healingPolicy,
             ProbabilityCalibrator calibrator,
             MessageIdNormalizer messageIdNormalizer,
@@ -63,7 +63,7 @@ public class GameRunner {
                     game.gold(),
                     game.turn(),
                     null,
-                    null      // potionCostHint
+                    null
             );
 
             Message best = msgs.stream()

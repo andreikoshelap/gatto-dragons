@@ -119,8 +119,20 @@ MessageIdNormalizer does this:
   - If encrypted == false → return the trimmed id (URI encoding happens later).
   - If encrypted == true and the string looks like base64 → try to decode.
   - Use the decoded value only if it matches the typical 8-char token [A-Za-z0-9]{8}; otherwise keep the raw id.
+  - 
+## 6) Logging & Observability (AOP-first)
+Game logging is implemented primarily via Aspect-Oriented Programming (AOP):
 
-## 6) References
+  - StateTraceAspect intercepts:
+    - State mapping (StateMapper.applySolve/applyPurchase) with delta logs:
+      - prints after for lives, gold, score, and turn, so you see exactly what each action changed.
+    - HTTP calls (GameClient.start) with after-returning logs
+Benefits:
+    - separation of concerns (logging vs logic)
+    - consistent, uniform logging format
+    - easy to extend (e.g. add timing, metrics)
+    
+## 7) References
 
 - **Expected Value (EV)** — overview & formulae:
   - Investopedia — Expected Value: https://www.investopedia.com/terms/e/expected-value.asp
