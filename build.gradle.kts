@@ -33,7 +33,9 @@ dependencies {
 	compileOnly("org.projectlombok:lombok:1.18.32")
 	annotationProcessor("org.projectlombok:lombok:1.18.32")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+	testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
+	testImplementation("org.assertj:assertj-core:3.26.0")
+	testImplementation("org.springframework:spring-test:6.2.11")
 }
 
 tasks.withType<Test> {

@@ -58,7 +58,6 @@ public class GameRunner {
             var msgs = api.messages(game.gameId());
             if (msgs == null || msgs.isEmpty()) break;
 
-//            final var rep = reputationService.get(game.gameId(), game.turn());
             ScoringContext ctx = new ScoringContext(
                     game.lives(),
                     game.gold(),
