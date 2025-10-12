@@ -12,20 +12,10 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 public class ScoringPolicyConfig {
 
-    private String policy = "bankrollAware"; //default
-
     @Bean("scoringPolicy")
     public ScoringPolicy scoringPolicyRouter(
-            @Qualifier("expectedValueScoringPolicy") ScoringPolicy ev,
-            @Qualifier("riskAverseScoringPolicy") ScoringPolicy risk,
-            @Qualifier("repAwareScoringPolicy") ScoringPolicy rep,
-            @Qualifier("bankrollAwareScoringPolicy") ScoringPolicy ba
+            @Qualifier("expectedValueScoringPolicy") ScoringPolicy ev
     ) {
-        return switch (policy) {
-            case "ev"           -> ev;
-            case "riskAverse"   -> risk;
-            case "repAware"     -> rep;
-            default             -> ba; // fallback
-        };
+        return ev;
     }
 }

@@ -48,7 +48,7 @@ You can choose one of several **scoring strategies**. Selection is done in `appl
 ```yaml
 dragon:
   scoring:
-    policy: bankrollAware   # ev | riskAverse | bankrollAware
+    policy: ba   # ev | ra | ba
 ```
 
 At startup the app logs the active strategy:

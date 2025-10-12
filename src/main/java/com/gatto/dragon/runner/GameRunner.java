@@ -7,7 +7,6 @@ import com.gatto.dragon.dto.ScoringContext;
 import com.gatto.dragon.logic.HealingPolicy;
 import com.gatto.dragon.logic.StateMapper;
 import com.gatto.dragon.strategy.ProbabilityCalibrator;
-import com.gatto.dragon.strategy.ReputationService;
 import com.gatto.dragon.strategy.ScoringPolicy;
 import com.gatto.dragon.util.MessageIdNormalizer;
 import jakarta.annotation.PostConstruct;
@@ -32,7 +31,6 @@ public class GameRunner {
     private final ProbabilityCalibrator calibrator;
     private final MessageIdNormalizer messageIdNormalizer;
     private final StateMapper stateMapper;
-    private final ReputationService reputationService;
 
     @PostConstruct
     void logPolicy() {
