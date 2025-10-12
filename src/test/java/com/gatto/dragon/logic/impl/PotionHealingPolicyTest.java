@@ -82,7 +82,7 @@ class PotionHealingPolicyTest {
         Game prev = game("G1", 2, 150, 0, 0);
         SolveResult res = solve(1, 150, 60, 60, 1, false);
 
-        api.nextShopItems = List.of(); // пусто
+        api.nextShopItems = List.of(); // empty
 
         Game afterSolve = mapper.applySolve(prev, res);
         Game out = policy.heal(prev, res);
@@ -130,13 +130,13 @@ class PotionHealingPolicyTest {
         Game prev = game("G1", 2, 200, 0, 0);
         SolveResult res = solve(1, 200, 70, 70, 1, false);
 
-        // магазин: будет выбран самый дешёвый pot (POTX, 90)
+        // shop: the cheapest pot (POTX, 90) will be chosen
         api.nextShopItems = List.of(
                 item("A", "sword", 120),
                 item("POTX", "magic POT of life", 90),
                 item("B", "shield", 95)
         );
-        // покупка успешна: +жизнь, золото уменьшилось
+        // purchase successful: +life, gold decreased
         api.nextPurchaseResult = purchase(2, 110, 2, true, null);
 
         Game afterSolve = mapper.applySolve(prev, res);
@@ -178,7 +178,7 @@ class PotionHealingPolicyTest {
      */
     static class FakeGameClient extends GameClient {
         FakeGameClient() {
-            super(RestClient.create()); // не используется, все методы переопределены
+            super(RestClient.create()); // not used, all methods are overridden
         }
 
         List<ShopItem> nextShopItems = new ArrayList<>();
@@ -191,7 +191,7 @@ class PotionHealingPolicyTest {
         @Override
         public List<ShopItem> shop(String gameId) {
             this.lastShopGameId = gameId;
-            // вернём снимок списка, чтобы избежать случайных мутаций
+            // return a snapshot of the list to avoid accidental mutations
             return nextShopItems == null ? null : List.copyOf(nextShopItems);
         }
 
@@ -205,7 +205,7 @@ class PotionHealingPolicyTest {
 
     /**
      * Deterministic StateMapper, mirroring production logic.
-     * (Если в проекте другой маппинг — подстрой соответствующим образом.)
+     * (If your project uses a different mapping — adjust accordingly.)
      */
     static class FakeStateMapper extends StateMapper {
 

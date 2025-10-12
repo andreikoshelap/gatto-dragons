@@ -25,7 +25,7 @@ class GameClientTest {
 
     @BeforeEach
     void setUp() {
-        // baseUrl произвольный — сервер перехватит вызовы в памяти
+        // baseUrl is arbitrary — the server will intercept calls in memory
         restClient = RestClient.builder().baseUrl("https://test.local");
         server = MockRestServiceServer.bindTo( restClient).build();
         client = new GameClient(restClient.build());
@@ -137,7 +137,7 @@ class GameClientTest {
 
     @Test
     void solve_400_returnsNull() {
-        // важно: клиент строит URI через UriComponentsBuilder и trim+encode
+        // important: the client builds URI via UriComponentsBuilder and trim+encode
         server.expect(once(), requestTo("https://test.local/api/v2/G123/solve/BAD!ID"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withStatus(HttpStatus.BAD_REQUEST).body("<html>Bad Request</html>").contentType(MediaType.TEXT_HTML));
