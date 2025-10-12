@@ -64,7 +64,7 @@ gamble, risky, rather detrimental, playing with fire, suicide mission, impossibl
 We map these labels to initial priors p -> [0,1] and calibrate them during play with Bayesian smoothing (alpha = 10):
 
 ```
-p_calibrated = (successes + α · prior) / (attempts + α)
+p_calibrated = (successes + alpha · prior) / (attempts + alpha)
 ```
 After each game we log the current mapping (calibrator.dump(gameId)).
 Here is an example:
@@ -125,5 +125,6 @@ MessageIdNormalizer does this:
 - **Expected Value (EV)** — overview & formulae:
   - Investopedia — Expected Value: https://www.investopedia.com/terms/e/expected-value.asp
   - Corporate Finance Institute — Expected Value: https://corporatefinanceinstitute.com/resources/data-science/expected-value/
+  - Wikipedia: “Additive smoothing”.: https://en.wikipedia.org/wiki/Additive_smoothing#Pseudocount
 
 ---
