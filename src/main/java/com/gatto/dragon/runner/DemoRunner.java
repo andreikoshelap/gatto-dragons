@@ -17,7 +17,7 @@ public class DemoRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        int N = 10;
+        int N = 5;
         int concurrency = 5;
 
         Flux.range(0, N)
