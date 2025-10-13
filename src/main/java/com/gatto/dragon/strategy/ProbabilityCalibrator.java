@@ -1,5 +1,7 @@
 package com.gatto.dragon.strategy;
 
+import com.gatto.dragon.config.ProbabilityPriorProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -11,32 +13,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class ProbabilityCalibrator {
 
-    // Prior probabilities per label (lowercase)
-    private static final Map<String, Double> PRIOR;
-    static {
-        var m = new java.util.LinkedHashMap<String, Double>();
-        m.put("sure thing", 0.95);
-        m.put("piece of cake", 0.90);
-        m.put("walk in the park", 0.80);
-        m.put("quite likely", 0.70);
-        m.put("hmmm....", 0.60);
-        m.put("gamble", 0.50);
-        m.put("risky", 0.40);
-        m.put("rather detrimental", 0.20);
-        m.put("playing with fire", 0.10);
-        m.put("suicide mission", 0.05);
-        m.put("impossible", 0.01);
-        PRIOR = java.util.Collections.unmodifiableMap(m);
-    }
+    private final ProbabilityPriorProperties priorProps;
 
     // stats[label] = [successes, attempts]
     private final ConcurrentHashMap<String, double[]> stats = new ConcurrentHashMap<>();
 
     public double calibratedProb(String label) {
         String key = label == null ? "" : label.toLowerCase();
-        double oldValue = PRIOR.getOrDefault(key, 0.5);
+        double oldValue = priorProps.getPriors().getOrDefault(key, 0.5);
         double[] s = stats.get(key);
         if (s == null) return oldValue;
         double result = s[0], attempt = s[1];
@@ -56,12 +43,12 @@ public class ProbabilityCalibrator {
     }
     public List<Row> snapshot() {
         Set<String> all = new TreeSet<>();
-        all.addAll(PRIOR.keySet());
+        all.addAll(priorProps.getPriors().keySet());
         all.addAll(stats.keySet());
 
         List<Row> out = new ArrayList<>();
         for (String k : all) {
-            double prior = PRIOR.getOrDefault(k, 0.5);
+            double prior = priorProps.getPriors().getOrDefault(k, 0.5);
             double[] s = stats.getOrDefault(k, new double[]{0,0});
             double succ = s[0], att = s[1];
             double empirical = att > 0 ? (succ/att) : Double.NaN;

@@ -13,3 +13,16 @@ logging:
 dragon:
     scoring:
         policy: ev   # ev
+    probability:
+        priors:
+            "sure thing": 0.95
+            "piece of cake": 0.90
+            "walk in the park": 0.80
+            "quite likely": 0.70
+            "hmmm....": 0.60
+            "gamble": 0.50
+            "risky": 0.40
+            "rather detrimental": 0.20
+            "playing with fire": 0.10
+            "suicide mission": 0.05
+            "impossible": 0.01
