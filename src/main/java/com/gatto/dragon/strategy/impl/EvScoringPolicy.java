@@ -21,6 +21,9 @@ public class EvScoringPolicy implements ScoringPolicy {
     @Value("${dragon.urgency.slope}")
     private double slope;
 
+
+//    EV = p × reward × (1 + max(0, 5 − expiresIn) × 0.1) × lifePenalty,
+//    kus lifePenalty = (lives ≤ 1 ? 0.8 : 1.0).
     @Override
     public double score(Message message, ScoringContext ctx) {
         // 1) calibrated probability from outcomes
