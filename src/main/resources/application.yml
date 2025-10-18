@@ -14,5 +14,5 @@ dragon:
     scoring:
         policy: ev   # ev |
     urgency:
-        window: 6
+        window: 5
         slope: 0.1
