@@ -4,7 +4,7 @@ import com.gatto.dragon.dto.Message;
 import com.gatto.dragon.dto.ScoringContext;
 import com.gatto.dragon.strategy.ProbabilityCalibrator;
 import com.gatto.dragon.strategy.ScoringPolicy;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -12,14 +12,26 @@ import org.springframework.stereotype.Component;
  * Expected-Value scoring with calibrated probability, urgency, and life penalty.
  */
 @Component("expectedValueScoringPolicy")
-@RequiredArgsConstructor
 public class EvScoringPolicy implements ScoringPolicy {
 
     private final ProbabilityCalibrator calibrator;
     @Value("${dragon.urgency.window}")
-    private int urgencyWindow;
+    private int urgencyWindow = 5; // default matches tests/README heuristic (5)
     @Value("${dragon.urgency.slope}")
-    private double slope;
+    private double slope = 0.1;    // default to match test/application.yml
+
+    // Constructor used by Spring to autowire the calibrator
+    @Autowired
+    public EvScoringPolicy(ProbabilityCalibrator calibrator) {
+        this.calibrator = calibrator;
+    }
+
+    // Additional constructor for tests / manual instantiation
+    public EvScoringPolicy(ProbabilityCalibrator calibrator, int urgencyWindow, double slope) {
+        this.calibrator = calibrator;
+        this.urgencyWindow = urgencyWindow;
+        this.slope = slope;
+    }
 
 
 //    EV = p × reward × (1 + max(0, 5 − expiresIn) × 0.1) × lifePenalty,
@@ -36,4 +48,3 @@ public class EvScoringPolicy implements ScoringPolicy {
         return prob * message.reward() * urgency * lifePenalty;
     }
 }
-

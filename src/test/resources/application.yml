@@ -1,0 +1,18 @@
+mugloar:
+    base-url: https://dragonsofmugloar.com
+spring:
+    application:
+        name: dragon
+logging:
+    level:
+        com.gatto.dragon.aop: DEBUG
+        com.gatto.dragon.api: DEBUG
+        com.gatto.dragon.logic: DEBUG
+        com.gatto.dragon.strategy: DEBUG
+        com.gatto.dragon: INFO
+dragon:
+    scoring:
+        policy: ev   # ev |
+    urgency:
+        window: 5
+        slope: 0.1

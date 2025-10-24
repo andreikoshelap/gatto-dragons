@@ -36,6 +36,9 @@ dependencies {
 	testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
 	testImplementation("org.assertj:assertj-core:3.26.0")
 	testImplementation("org.springframework:spring-test:6.2.11")
+	testImplementation("org.testcontainers:junit-jupiter:1.20.1")
+	testImplementation("org.testcontainers:mockserver:1.20.1") //  wiremock ?
+	testImplementation("org.wiremock:wiremock-standalone:3.5.4")
 }
 
 tasks.withType<Test> {
